@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Exceptions\InvalidIdException;
 use App\Exceptions\InvalidInputException;
+use App\Exceptions\InvalidStatusException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectResource;
 use App\Models\Project;
@@ -128,6 +129,17 @@ class ProjectController extends Controller
      */
     public function findByStatus(Request $request)
     {
+        $input = $request->input('status');
+
+        $statuses = explode(',', $input);
+
+        $whitelist = ['started', 'finished', 'draft'];
+
+        if (!empty(array_diff($statuses, $whitelist))) {
+            throw new InvalidStatusException();
+        }
+
+        return ProjectResource::collection(Project::whereIn('status', $statuses)->get());
     }
 
     /**
@@ -136,8 +148,13 @@ class ProjectController extends Controller
      * @param  int  $id
      * @return \App\Http\Resources\ProjectResource
      */
-    public function show(Project $project)
+    public function show($id)
     {
+        if (!is_numeric($id) || $id < 0) throw new InvalidIdException();
+
+        $project = Project::findOrFail($id);
+
+        return (new ProjectResource($project));
     }
 
     /**
