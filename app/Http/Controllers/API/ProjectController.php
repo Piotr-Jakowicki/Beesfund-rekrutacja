@@ -166,6 +166,28 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project)
     {
+        $rules = [
+            'name' => 'string',
+            'status' => 'string|in:started,finished,draft'
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            throw new InvalidInputException();
+        }
+
+        if (isset($request->name)) {
+            $project->name = $request->name;
+        }
+
+        if (isset($request->status)) {
+            $project->status = $request->status;
+        }
+
+        $project->save();
+
+        return (new ProjectResource($project));
     }
 
     /**
@@ -174,7 +196,14 @@ class ProjectController extends Controller
      * @param  \App\Models\Project  $project
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Project $project)
+    public function destroy($id)
     {
+        if (!is_numeric($id) || $id < 0) throw new InvalidIdException();
+
+        $project = Project::findOrFail($id);
+
+        $project->delete();
+
+        return response()->json($project);
     }
 }
