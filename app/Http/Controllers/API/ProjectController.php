@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Exceptions\InvalidIdException;
 use App\Exceptions\InvalidInputException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectResource;
@@ -68,6 +69,55 @@ class ProjectController extends Controller
      */
     public function updateObject(Request $request)
     {
+        $data = json_decode($request->body, true);
+
+        if (!is_numeric($data['id']) || $data['id'] < 0) throw new InvalidIdException();
+
+        $project = Project::findOrFail($data['id']);
+
+        if (!$project) {
+            return $this->responseError('404', 'Client Error', 'Project not found');
+        }
+
+        $rules = [
+            'id' => 'required|exists:projects,id|integer',
+            'name' => 'required|string',
+            'description' => 'required|string',
+            'status' => 'string|in:started,finished,draft',
+        ];
+
+        if (!empty($data['rewards'])) {
+            $rewardRules = [
+                'rewards.*.id' => 'integer|exists:rewards,id',
+                'rewards.*.projectId' => 'required|integer|same:id',
+                'rewards.*.name' => 'required|string',
+                'rewards.*.description' => 'required|string',
+                'rewards.*.amount' => 'required|regex:/^\d+(\.\d{1,2})?$/'
+            ];
+
+            $rules = array_merge($rules, $rewardRules);
+        }
+
+        $validator = Validator::make($data, $rules);
+
+        if ($validator->fails()) {
+            throw new InvalidInputException();
+        }
+
+        $project->update($data);
+
+        if (!empty($data['rewards'])) {
+            foreach ($data['rewards'] as $reward) {
+                if (empty($reward['id'])) {
+                    Reward::create($reward);
+                } else {
+                    $rewardInstance = Reward::find($reward['id']);
+                    $rewardInstance->update($reward);
+                }
+            }
+        }
+
+        return (new ProjectResource($project));
     }
 
     /**

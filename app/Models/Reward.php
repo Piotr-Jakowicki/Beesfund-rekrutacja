@@ -16,7 +16,7 @@ class Reward extends Model
      */
     protected $fillable = [
         'id',
-        'project_id',
+        'projectId',
         'name',
         'amount',
         'description',
