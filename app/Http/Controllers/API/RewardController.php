@@ -3,14 +3,21 @@
 namespace App\Http\Controllers\API;
 
 use App\Exceptions\InvalidInputException;
+use App\Gateways\RewardGateway;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RewardResource;
 use App\Models\Reward;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class RewardController extends Controller
 {
+    private $rewardGateway;
+
+    public function __construct(RewardGateway $rewardGateway)
+    {
+        $this->rewardGateway = $rewardGateway;
+    }
+
     /**
      * Store a newly created resource in storage.
      *
@@ -23,21 +30,9 @@ class RewardController extends Controller
 
         $data = json_decode($request->body, true);
 
-        $rules = [
-            'id' => 'nullable|integer|unique:rewards',
-            'projectId' => 'required|integer|exists:projects,id',
-            'name' => 'required|string',
-            'description' => 'required|string',
-            'amount' => 'required|regex:/^\d+(\.\d{1,2})?$/'
-        ];
+        $validatedData = $this->rewardGateway->validate($data);
 
-        $validator = Validator::make($data, $rules);
-
-        if ($validator->fails()) {
-            throw new InvalidInputException();
-        }
-
-        $reward = Reward::create($data);
+        $reward = Reward::create($validatedData);
 
         return (new RewardResource($reward));
     }

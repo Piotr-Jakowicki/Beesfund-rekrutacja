@@ -5,15 +5,24 @@ namespace App\Http\Controllers\API;
 use App\Exceptions\InvalidIdException;
 use App\Exceptions\InvalidInputException;
 use App\Exceptions\InvalidStatusException;
+use App\Gateways\ProjectGateway;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectResource;
 use App\Models\Project;
 use App\Models\Reward;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class ProjectController extends Controller
 {
+    private $projectGateway;
+
+    public function __construct(ProjectGateway $projectGateway)
+    {
+        $this->projectGateway = $projectGateway;
+    }
+
     /**
      * Store a newly created resource in storage.
      *
@@ -26,35 +35,12 @@ class ProjectController extends Controller
 
         $data = json_decode($request->body, true);
 
-        $rules = [
-            'id' => 'integer|unique:projects',
-            'name' => 'required|string',
-            'description' => 'required|string',
-            'status' => 'string|in:started,finished,draft',
-        ];
+        $validatedData = $this->projectGateway->validate($data);
 
-        if (!empty($data['rewards'])) {
-            $rewardsRules = [
-                'rewards.*.id' => 'integer|unique:rewards',
-                'rewards.*.projectId' => 'required|integer|same:id',
-                'rewards.*.name' => 'required|string',
-                'rewards.*.description' => 'required|string',
-                'rewards.*.amount' => 'required|regex:/^\d+(\.\d{1,2})?$/'
-            ];
+        $project = Project::create($validatedData);
 
-            $rules = array_merge($rules, $rewardsRules);
-        }
-
-        $validator = Validator::make($data, $rules);
-
-        if ($validator->fails()) {
-            throw new InvalidInputException();
-        }
-
-        $project = Project::create($data);
-
-        if (!empty($data['rewards'])) {
-            foreach ($data['rewards'] as $reward) {
+        if (!empty($validatedData['rewards'])) {
+            foreach ($validatedData['rewards'] as $reward) {
                 Reward::create($reward);
             }
         }
@@ -76,39 +62,12 @@ class ProjectController extends Controller
 
         $project = Project::findOrFail($data['id']);
 
-        if (!$project) {
-            return $this->responseError('404', 'Client Error', 'Project not found');
-        }
+        $validatedData = $this->projectGateway->validate($data);
 
-        $rules = [
-            'id' => 'required|exists:projects,id|integer',
-            'name' => 'required|string',
-            'description' => 'required|string',
-            'status' => 'string|in:started,finished,draft',
-        ];
+        $project->update($validatedData);
 
-        if (!empty($data['rewards'])) {
-            $rewardRules = [
-                'rewards.*.id' => 'integer|exists:rewards,id',
-                'rewards.*.projectId' => 'required|integer|same:id',
-                'rewards.*.name' => 'required|string',
-                'rewards.*.description' => 'required|string',
-                'rewards.*.amount' => 'required|regex:/^\d+(\.\d{1,2})?$/'
-            ];
-
-            $rules = array_merge($rules, $rewardRules);
-        }
-
-        $validator = Validator::make($data, $rules);
-
-        if ($validator->fails()) {
-            throw new InvalidInputException();
-        }
-
-        $project->update($data);
-
-        if (!empty($data['rewards'])) {
-            foreach ($data['rewards'] as $reward) {
+        if (!empty($validatedData['rewards'])) {
+            foreach ($validatedData['rewards'] as $reward) {
                 if (empty($reward['id'])) {
                     Reward::create($reward);
                 } else {
@@ -129,17 +88,13 @@ class ProjectController extends Controller
      */
     public function findByStatus(Request $request)
     {
-        $input = $request->input('status');
+        $statuses = $this->projectGateway->filterStatuses($request);
 
-        $statuses = explode(',', $input);
+        $data = Project::whereIn('status', $statuses)->get();
 
-        $whitelist = ['started', 'finished', 'draft'];
+        $data = $this->cacheResponse($data);
 
-        if (!empty(array_diff($statuses, $whitelist))) {
-            throw new InvalidStatusException();
-        }
-
-        return ProjectResource::collection(Project::whereIn('status', $statuses)->get());
+        return ProjectResource::collection($data);
     }
 
     /**
@@ -154,6 +109,8 @@ class ProjectController extends Controller
 
         $project = Project::findOrFail($id);
 
+        $project = $this->cacheResponse($project);
+
         return (new ProjectResource($project));
     }
 
@@ -166,16 +123,7 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project)
     {
-        $rules = [
-            'name' => 'string',
-            'status' => 'string|in:started,finished,draft'
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
-
-        if ($validator->fails()) {
-            throw new InvalidInputException();
-        }
+        $this->projectGateway->formDataValidation($request);
 
         if (isset($request->name)) {
             $project->name = $request->name;
@@ -202,8 +150,24 @@ class ProjectController extends Controller
 
         $project = Project::findOrFail($id);
 
+        $project = $this->cacheResponse($project);
+
         $project->delete();
 
         return response()->json($project);
+    }
+
+    protected function cacheResponse($data)
+    {
+        $url = request()->url();
+        $queryParams = request()->query();
+
+        $queryString = http_build_query($queryParams);
+
+        $fullUrl = "{$url}?{$queryString}";
+
+        return Cache::remember($fullUrl, 30, function () use ($data) {
+            return $data;
+        });
     }
 }
