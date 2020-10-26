@@ -4,7 +4,6 @@ namespace App\Http\Controllers\API;
 
 use App\Exceptions\InvalidIdException;
 use App\Exceptions\InvalidInputException;
-use App\Exceptions\InvalidStatusException;
 use App\Gateways\ProjectGateway;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectResource;
@@ -12,7 +11,6 @@ use App\Models\Project;
 use App\Models\Reward;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Validator;
 
 class ProjectController extends Controller
 {
@@ -62,7 +60,7 @@ class ProjectController extends Controller
 
         $project = Project::findOrFail($data['id']);
 
-        $validatedData = $this->projectGateway->validate($data);
+        $validatedData = $this->projectGateway->updateValidate($data);
 
         $project->update($validatedData);
 
@@ -149,8 +147,6 @@ class ProjectController extends Controller
         if (!is_numeric($id) || $id < 0) throw new InvalidIdException();
 
         $project = Project::findOrFail($id);
-
-        $project = $this->cacheResponse($project);
 
         $project->delete();
 

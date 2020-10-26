@@ -47,6 +47,36 @@ class ProjectGateway
         return $data;
     }
 
+    public function updateValidate($data)
+    {
+        $rules = [
+            'id' => 'required|exists:projects,id|integer',
+            'name' => 'required|string',
+            'description' => 'required|string',
+            'status' => 'string|in:started,finished,draft',
+        ];
+
+        if (!empty($data['rewards'])) {
+            $rewardRules = [
+                'rewards.*.id' => 'integer|exists:rewards,id',
+                'rewards.*.projectId' => 'required|integer|same:id',
+                'rewards.*.name' => 'required|string',
+                'rewards.*.description' => 'required|string',
+                'rewards.*.amount' => 'required|regex:/^\d+(\.\d{1,2})?$/'
+            ];
+
+            $rules = array_merge($rules, $rewardRules);
+        }
+
+        $validator = Validator::make($data, $rules);
+
+        if ($validator->fails()) {
+            throw new InvalidInputException();
+        }
+
+        return $data;
+    }
+
     public function filterStatuses(Request $request)
     {
         $input = $request->input('status');
