@@ -16,6 +16,12 @@ class ProjectController extends Controller
 {
     private $projectGateway;
 
+    /**
+     * Project Gateway dependency injection
+     * 
+     * @param  \App\Gateways\ProjectGateway $projectGateway
+     * @return void
+     */
     public function __construct(ProjectGateway $projectGateway)
     {
         $this->projectGateway = $projectGateway;
@@ -153,6 +159,12 @@ class ProjectController extends Controller
         return response()->json($project);
     }
 
+    /**
+     * Cache response by URL
+     * 
+     * @param array $data
+     * @return array $data
+     */
     protected function cacheResponse($data)
     {
         $url = request()->url();

@@ -5,8 +5,6 @@ namespace App\Gateways;
 use App\Exceptions\InvalidIdException;
 use App\Exceptions\InvalidInputException;
 use App\Exceptions\InvalidStatusException;
-use App\Models\Project;
-use App\Repositories\ProjectRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -47,6 +45,12 @@ class ProjectGateway
         return $data;
     }
 
+    /**
+     * Validate project object for update
+     * 
+     * @param array $data
+     * @return array $data
+     */
     public function updateValidate($data)
     {
         $rules = [
@@ -77,6 +81,12 @@ class ProjectGateway
         return $data;
     }
 
+    /**
+     * Whitelist for statuses
+     * 
+     * @param \Illuminate\Http\Request  $request
+     * @return array $statuses
+     */
     public function filterStatuses(Request $request)
     {
         $input = $request->input('status');
@@ -92,6 +102,12 @@ class ProjectGateway
         return $statuses;
     }
 
+    /**
+     * Validate form data
+     * 
+     * @param \Illuminate\Http\Request  $request
+     * @return void
+     */
     public function formDataValidation(Request $request)
     {
         $rules = [

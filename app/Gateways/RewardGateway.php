@@ -2,17 +2,13 @@
 
 namespace App\Gateways;
 
-use App\Exceptions\InvalidIdException;
 use App\Exceptions\InvalidInputException;
-use App\Models\Project;
-use App\Repositories\ProjectRepository;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class RewardGateway
 {
     /**
-     * Validate project object
+     * Validate reward object
      * 
      * @param array $data
      */

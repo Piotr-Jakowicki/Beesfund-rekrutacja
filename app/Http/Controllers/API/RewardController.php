@@ -13,6 +13,12 @@ class RewardController extends Controller
 {
     private $rewardGateway;
 
+    /**
+     * Reward Gateway dependency injection
+     * 
+     * @param  \App\Gateways\RewardtGateway $rewardtGateway
+     * @return void
+     */
     public function __construct(RewardGateway $rewardGateway)
     {
         $this->rewardGateway = $rewardGateway;
