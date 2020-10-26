@@ -1,61 +1,132 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+## Wymagania
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+PHP 7+
+Laravel 8.0 <a href="https://laravel.com/docs/8.x">Manual</a>
+Git
+Composer
+Mysql
+Xampp
+Postman
 
-## About Laravel
+# Komendy aby sprawdzić czy wszystko jest zainstalowane 
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+php -v
+composer -V
+git -v
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Instalacja projektu
+Komendy w terminalu:
+1.git clone https://github.com/Piotr-Jakowicki/Beesfund-rekrutacja.git
+2.composer intsall
+3.cp .env.example .env
+4.php artisan key:generate
 
-## Learning Laravel
+Odpowiednie zmiany w pliku .env
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+DB_CONNECTION=mysql 
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=<nazwa bazy>
+DB_USERNAME=<nick mysql>
+DB_PASSWORD=<hasło mysql>
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+np.
 
-## Laravel Sponsors
+DB_CONNECTION=mysql 
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=beesfund
+DB_USERNAME=root
+DB_PASSWORD=
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+w localhost/phpmyadmin stworzyć bazę o takiej samej nazwie jak w DB_DATABASE
 
-### Premium Partners
+Migracja bazy danych w terminalu:
+aby zrobić migrację xampp musi być włączony [Apache i MySQL]
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[OP.GG](https://op.gg)**
+w konsoli:
+php artisan migrate:fresh 
 
-## Contributing
+ewentualnie
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+php artisan migrate:fresh --seed 
 
-## Code of Conduct
+aby wygenerować dummy text w bazie
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+lub użyć pliku .sql który znajduje się w głownym katalogu
 
-## Security Vulnerabilities
+## Server
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+W terminalu:
+php artisan serve
 
-## License
+lub 
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+php artisan serve [--port] 
+
+aby sprecyzować port
+
+## Dodatkowo
+
+Błąd walidacji zmieniłbym z 405 na 422 oraz
+Endpointy z /project && /reward na /projects && /rewards
+
+## Kod
+
+Głowny kod znajduje się w :
+- app/Controllers/API
+- app/Gateways/
+
+Poboczny kod w :
+- app/Resource
+- app/Models
+- database/migrations
+- database/factories
+- app/Exceptions
+
+## Opis projektu 
+
+# Endpoint /reward 
+
+-Możliwość dodania tylko jednego zasobu jednocześnie
+-projectId,name,description,amount są wymagane 
+-id jest polem opcjonalnym, jeżeli nie zostanie podane id zostanie wygenerowane automatycznie
+
+# Endpoint /project POST
+
+Project:
+-Możliwośc dodania tylko jednego zasobu typu project jednocześnie 
+-name,descriptiont są wymagane
+-id jest polem opcjonalnym, jeżeli nie zostanie podane id zostanie wygenerowane automatycznie
+-jeżeli status nie zostanie podany, w bazie zapiszę się jako null
+
+Rewards:
+-Pole rewards jest opcjonalne
+-Możliwość dodania wielu zasobów typu reward jednocześnie
+-id jest polem opcjonalnym, jeżeli nie zostanie podane id zostanie wygenerowane automatycznie
+-walidacja rewards odbywa się tylko jeżeli istnieje przynajmniej 1 obiekt typu reward
+-projectId,name,description,amount są wymagane 
+
+# Endpoint /project PUT
+
+Project:
+-id,name,descrption są wymagane
+-jeżeli status nie zostanie podany wartość nie zostanie zmieniona 
+
+Reward:
+-edycja możliwa tylko jeżeli reward należy do project
+-Możliwośc edytowania wielu zasobów typu reward jednocześnie
+-Jeżeli id nie zostanie podane zostanie stworzony nowy zasób typu reward
+-Jeżeli id jest podane zasób typu reward zostanie edytowany
+
+# Endpoint /project/{projectId} GET
+
+-Endpoint jest cachowany na 30 sekund
+
+# Endpoint /project /findByStatus GET
+
+-Możliwość szukania po wielu filtrach
+-Endpoint jest cachowany na 30 sekund
+
+## W razie problemów z projektem lub pytań proszę o wiadomość na email jakowicki.piotr@gmail.com
