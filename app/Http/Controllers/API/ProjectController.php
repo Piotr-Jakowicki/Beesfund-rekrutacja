@@ -129,15 +129,7 @@ class ProjectController extends Controller
     {
         $this->projectGateway->formDataValidation($request);
 
-        if (isset($request->name)) {
-            $project->name = $request->name;
-        }
-
-        if (isset($request->status)) {
-            $project->status = $request->status;
-        }
-
-        $project->save();
+        $project->update($request->only(['name', 'status']));
 
         return (new ProjectResource($project));
     }
